@@ -1,0 +1,16 @@
+IndentWidth: 4
+TabWidth: 4
+ColumnLimit: 0
+BreakBeforeBraces: Allman
+AllowShortIfStatementsOnASingleLine: false
+IndentCaseLabels: false
+SpaceBeforeParens: Never
+UseTab: Always
+AlignAfterOpenBracket: DontAlign
+PointerBindsToType: true
+BreakConstructorInitializers: AfterColon
+ConstructorInitializerAllOnOneLineOrOnePerLine: true
+ConstructorInitializerIndentWidth: 4
+ContinuationIndentWidth: 4
+SortIncludes: false
+SortUsingDeclarations: false

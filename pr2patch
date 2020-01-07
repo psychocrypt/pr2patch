@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+
+function format_code ()
+{
+    wget https://raw.githubusercontent.com/psychocrypt/pr2patch/master/.clang-format >& /dev/null
+    find . -regex '.*\.\(cpp\|hpp\|cc\|cxx\|h\|inl\)' -exec clang-format-8 -i -style=file {} \;
+    rm -f .clang-format
+}
+
+function format_pr(){
+
+    echo "process branch $1"
+    git submodule foreach --recursive git clean -id >& /dev/null
+    git submodule update --force --recursive >& /dev/null
+    format_code
+    # revert format changes in submodules
+    git submodule update --force --recursive >& /dev/null
+    git add -A
+    git commit -a -m "format code" >& /dev/null
+}
+
+function clean_branches()
+{
+    git checkout master -f 
+    #remove pr if local available
+    git branch -D pr_${1} 
+    git branch -D pr_${1}_base 
+}
+
+pr_id=$1
+patch_name=$2
+
+git fetch origin
+clean_branches ${pr_id} >& /dev/null
+
+#query pr
+git fetch origin pull/${pr_id}/head:pr_${pr_id} >& /dev/null
+last_merge_commit=$(git merge-base origin/master pr_${pr_id})
+commits_of_pr=$(git rev-list ${last_merge_commit}..pr_${pr_id})
+
+
+echo "last merge commit: $last_merge_commit"
+echo "commits from pr:"
+echo "$commits_of_pr"
+
+git checkout $last_merge_commit -b pr_${pr_id}_base >& /dev/null
+format_pr pr_${pr_id}_base
+
+git checkout pr_${pr_id} >& /dev/null
+format_pr pr_${pr_id}
+
+git diff --no-prefix pr_${pr_id}_base > $patch_name
+
+clean_branches ${pr_id} >& /dev/null
+
