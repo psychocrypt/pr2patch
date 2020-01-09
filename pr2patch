@@ -22,6 +22,7 @@ function format_pr(){
 function clean_branches()
 {
     git checkout master -f 
+    git submodule update --force --recursive >& /dev/null
     #remove pr if local available
     git branch -D pr_${1} 
     git branch -D pr_${1}_base 
@@ -35,6 +36,12 @@ clean_branches ${pr_id} >& /dev/null
 
 #query pr
 git fetch origin pull/${pr_id}/head:pr_${pr_id} >& /dev/null
+
+if [ $? -ne 0 ] ; then
+	echo "pull request ${pr_id} not found" >&2
+	exit 1
+fi
+
 last_merge_commit=$(git merge-base origin/master pr_${pr_id})
 commits_of_pr=$(git rev-list ${last_merge_commit}..pr_${pr_id})
 
@@ -49,7 +56,8 @@ format_pr pr_${pr_id}_base
 git checkout pr_${pr_id} >& /dev/null
 format_pr pr_${pr_id}
 
-git diff --no-prefix pr_${pr_id}_base > $patch_name
+git diff --relative pr_${pr_id}_base > $patch_name
 
 clean_branches ${pr_id} >& /dev/null
-
+echo "patch '$patch_name' created"
+exit 0
