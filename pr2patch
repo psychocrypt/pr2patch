@@ -10,20 +10,13 @@ function format_code ()
 function format_pr(){
 
     echo "process branch $1"
-    git submodule foreach --recursive git clean -id >& /dev/null
-    git submodule update --force --recursive >& /dev/null
     format_code
-    # revert format changes in submodules
-    git submodule update --force --recursive >& /dev/null
-    git add -A
     git commit -a -m "format code" >& /dev/null
 }
 
 function clean_branches()
 {
     git checkout master -f 
-    git submodule update --force --recursive >& /dev/null
-    #remove pr if local available
     git branch -D pr_${1} 
     git branch -D pr_${1}_base 
 }
@@ -42,7 +35,7 @@ if [ $? -ne 0 ] ; then
 	exit 1
 fi
 
-last_merge_commit=$(git merge-base origin/master pr_${pr_id})
+last_merge_commit=$(git rev-list --parents -n 50 pr_${pr_id} | awk 'BEGIN{result=0}{if(NF==3 && result==0){print($1);result=1}}')
 commits_of_pr=$(git rev-list ${last_merge_commit}..pr_${pr_id})
 
 
@@ -56,8 +49,10 @@ format_pr pr_${pr_id}_base
 git checkout pr_${pr_id} >& /dev/null
 format_pr pr_${pr_id}
 
-git diff --relative pr_${pr_id}_base > $patch_name
+git diff --no-prefix pr_${pr_id}_base > $patch_name
 
-clean_branches ${pr_id} >& /dev/null
+
+echo $patch_name >> ../overview_monero
+
 echo "patch '$patch_name' created"
 exit 0
