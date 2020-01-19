@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+
+patch_name=$1
+
+patch -p0 < $patch_name
+patch_res="$?"
+# remove old files from before merge
+
+
+if [ $patch_res -ne 0 ] ; then
+    echo "res=$patch_res"
+    for f in $(git ls-files --others --exclude-standard | grep "\.rej$")
+    do
+        wiggle --replace ${f%".rej"} $f
+        wiggle_res="$?"
+        echo "wiggle_res=$wiggle_res"
+        if [ $wiggle_res -ne 0 ] ; then
+            echo kdiff3 -m ${f%".rej"}.orig ${f%".rej"} ${f%".rej"}.porig -o ${f%".rej"}
+            kdiff3 --qall -m ${f%".rej"}.orig ${f%".rej"} ${f%".rej"}.porig -o ${f%".rej"}
+        fi
+    done
+fi
+
+cd build
+
+while :;
+do
+    make -j 4
+    make_res=$?
+    if [ $make_res -eq 0 ] ; then
+        variable=y
+        while :;
+        do
+            echo "Last possibility to revert the changes!" 
+            read -rsn1 -p"Commit changes? [Y]" variable
+            echo -e "\n"
+            if [ "$variable" = "y" ] ; then
+                break
+            fi
+        done
+        break
+    fi
+    echo "build failed, please fix the bug by hand" >&2
+    variable=y
+    while :;
+    do
+        read -rsn1 -p"Do you solved the issue? [Yn]" variable
+        echo -e "\n"
+        if [ "$variable" = "y" ] ; then
+            break
+        fi
+    done
+done
+
+cd ..
+
+find . -name "*\.orig" -exec rm {} \;
+find . -name "*\.porig" -exec rm {} \;
+find . -name "*\.rej" -exec rm {} \;
+git commit -a -m "patch $(basename $patch_name)"
+
+exit 0

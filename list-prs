@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+
+export PATH=$HOME/workspace/pr2patch:$PATH
+
+# the last merged PR
+base_pr=$1
+base_folder=$2
+merge_folder=$3
+
+current_folder=$(pwd)
+patch_folder="$current_folder/patch_collection"
+
+cd $base_folder
+
+pr_list=$(git log --oneline --graph --decorate --first-parent | grep "Merge pull request #" | cut -d"#" -f2 | cut -d" " -f 1)
+
+base_pr_line_date=$(echo "$pr_list" | grep -n "^${base_pr}$")
+base_pr_line=$(echo $base_pr_line_date | cut -d":" -f1)
+
+
+cd $current_folder
+mkdir -p $patch_folder
+base_pr_line=$((base_pr_line - 1))
+for((line=$base_pr_line;line>0;line--))
+do
+    current_pr=$(echo "$pr_list" | sed -n "${line}"p)
+    echo "process pr $current_pr"
+    cd $current_folder
+    cd $base_folder
+    pr2patch "$current_pr" "$patch_folder/$current_pr"
+    cd $current_folder
+    cd $merge_folder
+    patch-apply "$patch_folder/$current_pr"
+done
+
+
+exit 0
