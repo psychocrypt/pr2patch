@@ -6,7 +6,7 @@ patch -p0 < $patch_name
 patch_res="$?"
 # remove old files from before merge
 
-pr_in_browser=0
+pr_in_browser=1
 
 has_meld=$(which meld >/dev/null && echo 1 || echo 0)
 
@@ -17,14 +17,14 @@ if [ $patch_res -ne 0 ] ; then
         wiggle --replace ${f%".rej"} $f
         wiggle_res="$?"
         if [ $wiggle_res -ne 0 ] ; then
-            if [ "$pr_in_browser" -eq 0 ] ; then
+            if [ "$pr_in_browser" -eq 1 ] ; then
                 xdg-open https://github.com/monero-project/monero/pull/$pr_id
                 echo "pull request $pr_id opened in default browser"
-                pr_in_browser=1
+                pr_in_browser=0
             fi
             if [ "$has_meld" -eq 1 ] ; then
-                echo meld ${f%".rej"}.orig ${f%".rej"} ${f%".rej"}.porig -o ${f%".rej"}
-                meld  ${f%".rej"}.orig ${f%".rej"}.porig ${f%".rej"} -o ${f%".rej"}                
+                echo meld  ${f%".rej"}.orig ${f%".rej"} ${f%".rej"}.porig -o ${f%".rej"}    
+                meld  ${f%".rej"}.orig ${f%".rej"} ${f%".rej"}.porig -o ${f%".rej"}                
             else
                 echo kdiff3 --qall -m ${f%".rej"}.orig ${f%".rej"} ${f%".rej"}.porig -o ${f%".rej"}
                 kdiff3 --qall -m ${f%".rej"}.orig ${f%".rej"} ${f%".rej"}.porig -o ${f%".rej"}
@@ -44,17 +44,17 @@ while :;
 do
     make -j 4
     make_res=$?
-    if [ "$first_compile" -eq 0 ] ; then
-        xdg-open https://github.com/monero-project/monero/pull/$pr_id
+    if [ "$pr_in_browser" -eq 1 ] ; then
+        xdg-open https://github.com/monero-project/monero/pull/$pr_id >/dev/null
         echo "pull request $pr_id opened in default browser"
-        first_compile=1
+        first_compile=0
     fi
     if [ $make_res -eq 0 ] ; then
         variable=y
         while :;
         do
             echo "Last possibility to revert the changes!" 
-            read -rsn1 -p"Commit changes? [Y]" variable
+            read -rsn1 -p"Commit changes? [y]" variable
             echo -e "\n"
             if [ "$variable" = "y" ] ; then
                 break
@@ -66,7 +66,7 @@ do
     variable=y
     while :;
     do
-        read -rsn1 -p"Do you solved the issue? [Yn]" variable
+        read -rsn1 -p"Do you solved the issue? [yn]" variable
         echo -e "\n"
         if [ "$variable" = "y" ] ; then
             break
