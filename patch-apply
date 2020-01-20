@@ -33,7 +33,9 @@ if [ $patch_res -ne 0 ] ; then
     done
 fi
 
+mkdir -p build
 cd build
+cmake ..
 
 pr_id=$(basename $patch_name)
 
