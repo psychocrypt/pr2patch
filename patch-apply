@@ -8,7 +8,7 @@ patch_res="$?"
 
 pr_in_browser=0
 
-has_meld=$(which meld 2>&1 || echo 0 && echo 1)
+has_meld=$(which meld >/dev/null && echo 1 || echo 0)
 
 if [ $patch_res -ne 0 ] ; then
     echo "res=$patch_res"
@@ -24,7 +24,7 @@ if [ $patch_res -ne 0 ] ; then
             fi
             if [ "$has_meld" -eq 1 ] ; then
                 echo meld ${f%".rej"}.orig ${f%".rej"} ${f%".rej"}.porig -o ${f%".rej"}
-                meld  ${f%".rej"}.orig ${f%".rej"} ${f%".rej"}.porig -o ${f%".rej"}                
+                meld  ${f%".rej"}.orig ${f%".rej"}.porig ${f%".rej"} -o ${f%".rej"}                
             else
                 echo kdiff3 --qall -m ${f%".rej"}.orig ${f%".rej"} ${f%".rej"}.porig -o ${f%".rej"}
                 kdiff3 --qall -m ${f%".rej"}.orig ${f%".rej"} ${f%".rej"}.porig -o ${f%".rej"}
