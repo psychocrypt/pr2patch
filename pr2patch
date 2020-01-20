@@ -54,5 +54,7 @@ git diff --no-prefix pr_${pr_id}_base > $patch_name
 
 echo $patch_name >> ../overview_monero
 
+clean_branches ${pr_id} >& /dev/null
+
 echo "patch '$patch_name' created"
 exit 0

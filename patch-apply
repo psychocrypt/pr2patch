@@ -6,6 +6,7 @@ patch -p0 < $patch_name
 patch_res="$?"
 # remove old files from before merge
 
+pr_in_browser=0
 
 if [ $patch_res -ne 0 ] ; then
     echo "res=$patch_res"
@@ -13,8 +14,12 @@ if [ $patch_res -ne 0 ] ; then
     do
         wiggle --replace ${f%".rej"} $f
         wiggle_res="$?"
-        echo "wiggle_res=$wiggle_res"
         if [ $wiggle_res -ne 0 ] ; then
+            if [ "$pr_in_browser" -eq 0 ] ; then
+                xdg-open https://github.com/monero-project/monero/pull/$pr_id
+                echo "pull request $pr_id opened in default browser"
+                pr_in_browser=1
+            fi
             echo kdiff3 -m ${f%".rej"}.orig ${f%".rej"} ${f%".rej"}.porig -o ${f%".rej"}
             kdiff3 --qall -m ${f%".rej"}.orig ${f%".rej"} ${f%".rej"}.porig -o ${f%".rej"}
         fi
@@ -23,10 +28,18 @@ fi
 
 cd build
 
+pr_id=$(basename $patch_name)
+
+
 while :;
 do
     make -j 4
     make_res=$?
+    if [ "$first_compile" -eq 0 ] ; then
+        xdg-open https://github.com/monero-project/monero/pull/$pr_id
+        echo "pull request $pr_id opened in default browser"
+        first_compile=1
+    fi
     if [ $make_res -eq 0 ] ; then
         variable=y
         while :;
@@ -57,6 +70,6 @@ cd ..
 find . -name "*\.orig" -exec rm {} \;
 find . -name "*\.porig" -exec rm {} \;
 find . -name "*\.rej" -exec rm {} \;
-git commit -a -m "patch $(basename $patch_name)"
+git commit -a -m "patch pr_id"
 
 exit 0
